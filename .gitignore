@@ -205,3 +205,33 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Build outputs
+firmware/*/build/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Datasets and model checkpoints
+training/datasets/data/
+training/checkpoints/
+*.pth.tar
+
+# Firmware binaries
+*.elf
+*.bin
+*.hex
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+
+# SQLite DB
+*.db
+*.sqlite
+
+# Environment variables
+.env
