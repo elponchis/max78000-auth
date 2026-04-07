@@ -235,3 +235,7 @@ dist/
 
 # Environment variables
 .env
+training/datasets/gesture/
+training/datasets/leapgestrecog*/
+training/checkpoints/
+training/datasets/prepare_leap.py
