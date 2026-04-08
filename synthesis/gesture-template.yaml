@@ -1,0 +1,177 @@
+---
+# YAML template -- requires manual editing, particularly with regard to out_offset and processors
+# Generated for MAX78000 with input format CHW
+
+arch: ai85simplenet
+dataset: Gesture
+
+layers:
+  # Layer 0
+  - name: conv1_Conv_10  # conv1_Conv_10 fused with conv1.activate
+    # input shape: (3, 64, 64)
+    data_format: CHW
+    processors: 0x0000000100010001
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (16, 64, 64)
+
+  # Layer 1
+  - name: conv2_Conv_8  # conv2_Conv_8 fused with conv2.activate
+    # input shape: (16, 64, 64)
+    processors: 0x0000000ffff00000
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (20, 64, 64)
+
+  # Layer 2
+  - name: conv3_Conv_8  # conv3_Conv_8 fused with conv3.activate
+    # input shape: (20, 64, 64)
+    processors: 0x00000000000fffff
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (20, 64, 64)
+
+  # Layer 3
+  - name: conv4_Conv_8  # conv4_Conv_8 fused with conv4.activate
+    # input shape: (20, 64, 64)
+    processors: 0x0fffff0000000000
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (20, 64, 64)
+
+  # Layer 4
+  - name: conv5_Conv_8  # conv5.pool and conv5_Conv_8 fused with conv5.activate
+    # input shape: (20, 64, 64)
+    processors: 0x000000fffff00000
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+    # output shape: (20, 32, 32)
+
+  # Layer 5
+  - name: conv6_Conv_8  # conv6_Conv_8 fused with conv6.activate
+    # input shape: (20, 32, 32)
+    processors: 0x00000000000fffff
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (20, 32, 32)
+
+  # Layer 6
+  - name: conv7_Conv_8  # conv7_Conv_8 fused with conv7.activate
+    # input shape: (20, 32, 32)
+    processors: 0xfffff00000000000
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (44, 32, 32)
+
+  # Layer 7
+  - name: conv8_Conv_8  # conv8.pool and conv8_Conv_8 fused with conv8.activate
+    # input shape: (44, 32, 32)
+    processors: 0x00000fffffffffff
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+    # output shape: (48, 16, 16)
+
+  # Layer 8
+  - name: conv9_Conv_8  # conv9_Conv_8 fused with conv9.activate
+    # input shape: (48, 16, 16)
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    # output shape: (48, 16, 16)
+
+  # Layer 9
+  - name: conv10_Conv_8  # conv10.pool and conv10_Conv_8 fused with conv10.activate
+    # input shape: (48, 16, 16)
+    processors: 0x0000ffffffffffff
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+    # output shape: (96, 8, 8)
+
+  # Layer 10
+  - name: conv11_Conv_8  # conv11.pool and conv11_Conv_8 fused with conv11.activate
+    # input shape: (96, 8, 8)
+    processors: 0x0000ffffffffffff
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 1x1
+    pad: 0
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+    # output shape: (512, 4, 4)
+
+  # Layer 11
+  - name: conv12_Conv_8  # conv12_Conv_8 fused with conv12.activate
+    # input shape: (512, 4, 4)
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 1x1
+    pad: 0
+    activate: Relu
+    # output shape: (128, 4, 4)
+
+  # Layer 12
+  - name: conv13_Conv_8  # conv13.pool and conv13_Conv_8 fused with conv13.activate
+    # input shape: (128, 4, 4)
+    processors: 0xffffffffffffffff
+    out_offset: 0x4000
+    op: Conv2d
+    kernel_size: 3x3
+    pad: 1
+    activate: Relu
+    max_pool: 2
+    pool_stride: 2
+    pool_dilation: [1, 1]
+    # output shape: (128, 2, 2)
+
+  # Layer 13
+  - name: conv14_Conv_4
+    # input shape: (128, 2, 2)
+    processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    op: Conv2d
+    kernel_size: 1x1
+    pad: 0
+    activate: None
+    # output shape: (5, 2, 2)
