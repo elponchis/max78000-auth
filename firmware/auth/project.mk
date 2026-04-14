@@ -67,3 +67,4 @@ LIB_SDHC = 1
 # - FF_FS_EXFAT = 0
 FATFS_VERSION = ff15
 FF_CONF_DIR = ./include
+PROJ_CFLAGS += -Os
