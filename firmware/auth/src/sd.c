@@ -311,3 +311,38 @@ int cnn_4_load_weights_from_SD(void)
     f_close(&file);
     return CNN_OK;
 }
+
+int cnn_5_load_weights_from_SD(void)
+{
+    int i;
+    int buffer_size;
+    uint32_t len;
+    volatile uint32_t *addr;
+    const uint32_t *ptr;
+    if ((err = f_open(&file, "weights_5.bin", FA_READ)) != FR_OK) {
+        PR_INFO("ERROR opening weights_5.bin: %s\n", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        while (1);
+    }
+    total_bytes = 0;
+    buffer_size = sizeof(kernel_buffer);
+    buffer_size >>= 2;
+    f_lseek(&file, 0);
+    ptr = read_weights_from_SD();
+    i = buffer_size;
+    while ((addr = (volatile uint32_t *)*ptr++) != 0) {
+        *((volatile uint8_t *)((uint32_t)addr | 1)) = 0x01;
+        i--;
+        if (i == 0) { ptr = read_weights_from_SD(); i = buffer_size; }
+        len = *ptr++;
+        i--;
+        if (i == 0) { ptr = read_weights_from_SD(); i = buffer_size; }
+        while (len-- > 0) {
+            *addr++ = *ptr++;
+            i--;
+            if (i == 0) { ptr = read_weights_from_SD(); i = buffer_size; }
+        }
+    }
+    f_close(&file);
+    return CNN_OK;
+}

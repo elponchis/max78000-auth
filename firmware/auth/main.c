@@ -16,6 +16,7 @@
 #include "embeddings.h"
 #include "faceID.h"
 #include "gesture_auth.h"
+#include "speaker_auth.h"
 #include "utils.h"
 
 #define CONSOLE_BAUD     115200
@@ -175,6 +176,22 @@ int main(void)
             // 원래 해상도로 복구
             camera_setup(IMAGE_XRES, IMAGE_YRES, PIXFORMAT_RGB565,
                          FIFO_FOUR_BYTE, USE_DMA, dma_channel);
+        }
+
+        // 레벨 2: 화자 임베딩 추가 인증
+        if (DEFAULT_AUTH_LEVEL >= 2) {
+            PR_INFO("Running speaker auth...");
+            auth_send_result("SPEAKER_START");
+            if (!speaker_auth()) {
+                fail_count++;
+                PR_INFO("Speaker FAIL (%d/3)", fail_count);
+                auth_send_result("AUTH_FAIL");
+                if (fail_count >= MAX_FAIL_COUNT) {
+                    auth_lockout();
+                    fail_count = 0;
+                }
+                continue;
+            }
         }
 
         // 인증 성공
