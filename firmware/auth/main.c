@@ -119,7 +119,11 @@ int main(void)
     camera_write_reg(0x11, 0x80);
     camera_set_vflip(0);
 
+    PR_INFO("Before SD_Init...");
+    MXC_Delay(MXC_DELAY_SEC(5));
     SD_Init();
+    PR_INFO("After SD_Init...");
+    speaker_auth_init();
 
     PR_INFO("Edge-Auth Ready. Auth Level: %d", DEFAULT_AUTH_LEVEL);
 

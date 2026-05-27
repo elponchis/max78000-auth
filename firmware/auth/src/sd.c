@@ -170,6 +170,17 @@ void SD_Init(void)
     }
 
     PR_INFO("SD Card Opened\n");
+
+    // 파일 목록 출력
+    DIR dir;
+    FILINFO fno;
+    if (f_opendir(&dir, "/") == FR_OK) {
+        PR_INFO("SD Card contents:\n");
+        while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0] != 0) {
+            PR_INFO("  %s\n", fno.fname);
+        }
+        f_closedir(&dir);
+    }
 }
 
 uint32_t *read_weights_from_SD(void)

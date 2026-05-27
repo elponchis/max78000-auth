@@ -68,3 +68,4 @@ LIB_SDHC = 1
 FATFS_VERSION = ff15
 FF_CONF_DIR = ./include
 PROJ_CFLAGS += -Os
+LIB_I2S = 1
