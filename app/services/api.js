@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.0.1:5000'; // 라즈베리파이 IP로 변경 필요
+const BASE_URL = 'http://10.108.249.240:5000'; // 라즈베리파이 IP로 변경 필요
 
 const api = axios.create({
   baseURL: BASE_URL,

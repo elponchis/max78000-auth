@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "board.h"
 #include "mxc.h"
 #include "mxc_device.h"
@@ -96,6 +97,7 @@ int main(void)
 
     MXC_RTC_Init(0, 0);
     MXC_RTC_Start();
+    srand(MXC_RTC_GetSecond());
     MXC_DMA_Init();
     dma_channel = MXC_DMA_AcquireChannel();
 
@@ -147,6 +149,7 @@ int main(void)
 
         // ② 얼굴 인식
         face_id();
+	mission_class = rand() % 5;
         face_detected = 0;
 
         // 레벨 1 이상: 제스처 인증
@@ -157,23 +160,32 @@ int main(void)
             char mission_msg[32];
             snprintf(mission_msg, sizeof(mission_msg), "MISSION:%d", mission_class);
             auth_send_result(mission_msg);
-
+            // Target 먼저 알려주고 3초 대기 후 캡처
+            PR_INFO("Target: class %d", mission_class);
+            MXC_Delay(MXC_DELAY_SEC(3));
             // 카메라 해상도 64x64로 변경
             camera_setup(64, 64, PIXFORMAT_RGB565, FIFO_FOUR_BYTE, USE_DMA, dma_channel);
-
-            if (!gesture_auth(mission_class)) {
+            // 최대 5회 재시도
+            int gesture_done = 0;
+            for (int retry = 0; retry < 5; retry++) {
+                if (gesture_auth(mission_class)) {
+                    gesture_done = 1;
+                    break;
+                }
+                PR_INFO("Gesture retry %d/5", retry + 1);
+                MXC_Delay(MXC_DELAY_SEC(3));
+            }
+            // 원래 해상도로 복구
+            camera_setup(IMAGE_XRES, IMAGE_YRES, PIXFORMAT_RGB565,
+                         FIFO_FOUR_BYTE, USE_DMA, dma_channel);
+            if (!gesture_done) {
                 fail_count++;
                 PR_INFO("Gesture FAIL (%d/3)", fail_count);
                 auth_send_result("AUTH_FAIL");
-
                 if (fail_count >= MAX_FAIL_COUNT) {
                     auth_lockout();
                     fail_count = 0;
                 }
-
-                // 원래 해상도로 복구
-                camera_setup(IMAGE_XRES, IMAGE_YRES, PIXFORMAT_RGB565,
-                             FIFO_FOUR_BYTE, USE_DMA, dma_channel);
                 continue;
             }
 
@@ -205,7 +217,6 @@ int main(void)
         LED_Off(1);
 
         // 다음 미션 클래스 변경 (간단한 순환)
-        mission_class = (mission_class + 1) % 5;
     }
 
     return 0;

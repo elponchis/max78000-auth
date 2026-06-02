@@ -1,4 +1,4 @@
-ai8xize.py --verbose --test-dir /home/max78000/max78000-auth/synthesis/gesture --prefix gesture --checkpoint-file /home/max78000/max78000-auth/training/checkpoints/gesture64_final.pth.tar --config-file networks/gesture64.yaml --device MAX78000 --compact-data --mexpress --timer 0 --display-checkpoint
+ai8xize.py --verbose --test-dir /home/max78000/max78000-auth/synthesis/gesture --prefix gesture --checkpoint-file /home/max78000/max78000-auth/training/checkpoints/gesture64_final.pth.tar --config-file networks/gesture64.yaml --device MAX78000 --compact-data --no-mexpress --timer 0 --display-checkpoint --overwrite
 MAX78000
 
 gesture
@@ -74,16 +74,16 @@ Kernel map:
 Global registers:
 -----------------
 F1024 (00001000): 00000000 // AON control
-R00   (00100000): 00100008 // Stop SM
+R00   (00100000): 00000008 // Stop SM
 R01   (00100004): 0000040e // SRAM control
 R02   (00100008): 0000000d // Layer count
-R00   (00500000): 00100008 // Stop SM
+R00   (00500000): 00000008 // Stop SM
 R01   (00500004): 0000040e // SRAM control
 R02   (00500008): 0000000d // Layer count
-R00   (00900000): 00100008 // Stop SM
+R00   (00900000): 00000008 // Stop SM
 R01   (00900004): 0000040e // SRAM control
 R02   (00900008): 0000000d // Layer count
-R00   (00d00000): 00100008 // Stop SM
+R00   (00d00000): 00000008 // Stop SM
 R01   (00d00004): 0000040e // SRAM control
 R02   (00d00008): 0000000d // Layer count
 
@@ -1202,11 +1202,11 @@ L13 G3 R17 (00d008c4): 00000000 // Stream processing delta *
 
 Global registers:
 -----------------
-R00   (00100000): 00100808 // Enable quadrant 0
-R00   (00500000): 00100809 // Enable quadrant 1
-R00   (00900000): 00100809 // Enable quadrant 2
-R00   (00d00000): 00100809 // Enable quadrant 3
-R00   (00100000): 00100009 // Master enable quadrant 0
+R00   (00100000): 00000808 // Enable quadrant 0
+R00   (00500000): 00000809 // Enable quadrant 1
+R00   (00900000): 00000809 // Enable quadrant 2
+R00   (00d00000): 00000809 // Enable quadrant 3
+R00   (00100000): 00000009 // Master enable quadrant 0
 
 LAYER 0 (conv1_Conv_10) (CONV2D)...
 
