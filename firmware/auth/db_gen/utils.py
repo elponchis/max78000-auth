@@ -98,7 +98,12 @@ def append_db_file_from_path(folder_path, face_detector, ai85_adapter):
             img = rotate_image(img, img_rot)
             img = img.astype(np.float32)            
 
-            img = get_face_image(img, face_detector)
+            #img = get_face_image(img, face_detector)
+            try:
+                img = get_face_image(img, face_detector)
+            except (IndexError, Exception) as e:
+                print(f'\t  FAILED: {e}')
+                continue
             if img is not None:
                 img = (img.squeeze()).detach().cpu().numpy()
                 img = img.astype(np.uint8)

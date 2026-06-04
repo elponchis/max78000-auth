@@ -239,3 +239,16 @@ training/datasets/gesture/
 training/datasets/leapgestrecog*/
 training/checkpoints/
 training/datasets/prepare_leap.py
+
+# Image captures
+Image.png
+
+# Face enrollment data (personal)
+firmware/auth/db_gen/db/
+firmware/auth/db_gen/jisoo_*/
+firmware/auth/jisoo_*/
+
+# Augmentation scripts (experimental)
+firmware/auth/db_gen/augment_*.py
+
+# Per-user enrollment data

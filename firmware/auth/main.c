@@ -83,14 +83,13 @@ int main(void)
     SystemCoreClockUpdate();
 
     ConsoleUart = MXC_UART_GET_UART(CONSOLE_UART);
+    CommUart = ConsoleUart;
     if ((error = MXC_UART_Init(ConsoleUart, CONSOLE_BAUD, MXC_UART_IBRO_CLK)) != E_NO_ERROR) {
         PR_ERR("UART Init Error: %d\n", error);
         return error;
     }
 
     // 인증 결과 전송용 UART (라즈베리파이 연결)
-    CommUart = MXC_UART_GET_UART(1);
-    MXC_UART_Init(CommUart, CONSOLE_BAUD, MXC_UART_IBRO_CLK);
 
     PR_INFO("Edge-Auth System Starting...");
     init_names();

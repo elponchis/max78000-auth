@@ -360,6 +360,8 @@ static void run_cnn_2(void)
     PR_DEBUG("FaceID inference time: %d ms\n", utils_get_time_ms() - pass_time);
     PR_DEBUG("CNN_3 max value: %d \n", max_emb);
     PR_DEBUG("CNN_3 max value index: %d \n", max_emb_index);
+
+    PR_INFO("FaceID max_emb: %d (threshold=%d)", max_emb, Threshold);
     if (max_emb > Threshold) {
         PR_INFO("FaceID result: subject id: %d \n", max_emb_index);
         name = (char *)names[max_emb_index];
