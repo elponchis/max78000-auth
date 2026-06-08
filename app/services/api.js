@@ -29,3 +29,12 @@ export const getHealth = () =>
   api.get('/health');
 
 export default api;
+
+export const deleteUser = (userId) => api.delete(`/users/${userId}`);
+
+export const enrollCapture = () => api.post('/enroll/capture');
+export const enrollPreview = () => api.get('/enroll/preview');
+export const enrollSave = (rawPath, userName, index) =>
+  api.post('/enroll/save', { raw_path: rawPath, user_name: userName, index });
+export const enrollFinalize = (userName) =>
+  api.post('/enroll/finalize', { user_name: userName });

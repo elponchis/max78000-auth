@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "board.h"
 #include "mxc.h"
 #include "mxc_device.h"
@@ -51,13 +52,49 @@ void init_names(void)
 
 void auth_send_result(const char *result)
 {
-    MXC_UART_WriteTXFIFO(CommUart, (uint8_t*)result, strlen(result));
-    MXC_UART_WriteTXFIFO(CommUart, (uint8_t*)"\n", 1);
+    int n = strlen(result);
+    for (int i = 0; i < n; i++) {
+        while (MXC_UART_GetTXFIFOAvailable(CommUart) == 0) {}
+        MXC_UART_WriteCharacter(CommUart, result[i]);
+    }
+    while (MXC_UART_GetTXFIFOAvailable(CommUart) == 0) {}
+    MXC_UART_WriteCharacter(CommUart, '\n');
 }
+
+// UART RX에서 1줄 읽기 (non-blocking, '\n' 또는 '\r' 만나면 종료)
+static int auth_uart_read_line(char *buf, int max_len)
+{
+    static char rx_buf[64];
+    static int rx_idx = 0;
+    
+    int available = MXC_UART_GetRXFIFOAvailable(CommUart);
+    while (available > 0 && rx_idx < (int)sizeof(rx_buf) - 1) {
+        unsigned char c;
+        MXC_UART_ReadRXFIFO(CommUart, &c, 1);
+        available--;
+        if (c == '\n' || c == '\r') {
+            if (rx_idx > 0) {
+                rx_buf[rx_idx] = '\0';
+                int len = rx_idx;
+                if (len >= max_len) len = max_len - 1;
+                memcpy(buf, rx_buf, len);
+                buf[len] = '\0';
+                rx_idx = 0;
+                return len;
+            }
+        } else {
+            rx_buf[rx_idx++] = c;
+        }
+    }
+    return 0;
+}
+
+// 명령 모드 enum
+typedef enum { MODE_IDLE, MODE_AUTH, MODE_ENROLL } auth_mode_t;
+static auth_mode_t current_mode = MODE_IDLE;
 
 void auth_lockout(void)
 {
-    PR_INFO("AUTH LOCKOUT - waiting %dms", LOCK_DURATION_MS);
     auth_send_result("AUTH_LOCKED");
     MXC_Delay(MXC_DELAY_MSEC(LOCK_DURATION_MS));
     auth_send_result("AUTH_UNLOCKED");
@@ -91,7 +128,6 @@ int main(void)
 
     // 인증 결과 전송용 UART (라즈베리파이 연결)
 
-    PR_INFO("Edge-Auth System Starting...");
     init_names();
 
     MXC_RTC_Init(0, 0);
@@ -120,30 +156,98 @@ int main(void)
     camera_write_reg(0x11, 0x80);
     camera_set_vflip(0);
 
-    PR_INFO("Before SD_Init...");
     MXC_Delay(MXC_DELAY_SEC(5));
     SD_Init();
-    PR_INFO("After SD_Init...");
     speaker_auth_init();
 
-    PR_INFO("Edge-Auth Ready. Auth Level: %d", DEFAULT_AUTH_LEVEL);
 
     int fail_count = 0;
 
     while (1) {
-        PR_INFO("--- Waiting for face ---");
-        LED_On(0);
 
-        // ① 얼굴 감지
-        face_detection();
-        LED_Off(0);
+	char cmd[64];
+        if (auth_uart_read_line(cmd, sizeof(cmd)) > 0) {
+            if (strncmp(cmd, "START", 5) == 0) {
+                current_mode = MODE_AUTH;
+            } else if (strncmp(cmd, "CAPTURE", 7) == 0) {
+                current_mode = MODE_ENROLL;
+            }
+        }
 
-        if (!face_detected) {
-            PR_INFO("No face detected.");
+/*	if (current_mode == MODE_ENROLL) {
+            current_mode = MODE_IDLE;
+	    MXC_Delay(MXC_DELAY_MSEC(200));
+            // 1장 캡처 → UART로 전송
+            uint8_t *raw;
+            uint32_t imglen, w, h;
+            camera_start_capture_image();
+            while (!camera_is_image_rcv()) {}
+            camera_get_image(&raw, &imglen, &w, &h);
+
+            // 헤더 송신: "*IMG* %d %d %d\n"
+            char hdr[64];
+            snprintf(hdr, sizeof(hdr), "###IMG### %lu %lu %lu", imglen, w, h);
+            auth_send_result(hdr);
+	    MXC_Delay(MXC_DELAY_MSEC(500));
+
+            // raw 데이터 송신
+            int len = imglen;
+            MXC_UART_Write(CommUart, raw, &len);
+
+            auth_send_result("###IMG_END###");
+            continue;
+        } */
+	if (current_mode == MODE_ENROLL) {
+            current_mode = MODE_IDLE;
+            MXC_Delay(MXC_DELAY_MSEC(500));
+
+            uint8_t *raw;
+            uint32_t imglen, w, h;
+            camera_start_capture_image();
+            while (!camera_is_image_rcv()) {}
+            camera_get_image(&raw, &imglen, &w, &h);
+	    
+	    char hdr[64];
+	    int hdr_len = snprintf(hdr, sizeof(hdr), "###IMG### %lu %lu %lu\n", imglen, w, h);
+            for (int i = 0; i < hdr_len; i++) {
+                while (MXC_UART_GetTXFIFOAvailable(CommUart) == 0) {}
+                MXC_UART_WriteCharacter(CommUart, hdr[i]);
+            }
+            MXC_Delay(MXC_DELAY_MSEC(500));
+            
+            // raw 송신
+	    for (uint32_t i = 0; i < imglen; i++) {
+                while (MXC_UART_GetTXFIFOAvailable(CommUart) == 0) {}
+                MXC_UART_WriteCharacter(CommUart, raw[i]);
+            }
             continue;
         }
 
-        PR_INFO("Face detected! Running FaceID...");
+        if (current_mode != MODE_AUTH) {
+            MXC_Delay(MXC_DELAY_MSEC(100));
+            continue;
+        }
+        
+        // 인증 1회 끝나면 IDLE 복귀
+        current_mode = MODE_IDLE;
+
+        LED_On(0);
+
+        // ① 얼굴 감지
+        int face_retry;
+	for (face_retry = 0; face_retry < 50; face_retry++) {
+	    face_detection();
+	    if (face_detected) break;
+	    MXC_Delay(MXC_DELAY_MSEC(200));
+	}
+
+        LED_Off(0);
+        if (!face_detected) {
+            PR_INFO("No face detected.");
+	    auth_send_result("AUTH_FAIL");
+            continue;
+        }
+
         LED_On(1);
 
         // ② 얼굴 인식
@@ -153,15 +257,13 @@ int main(void)
 
         // 레벨 1 이상: 제스처 인증
         if (DEFAULT_AUTH_LEVEL >= 1) {
-            PR_INFO("Running gesture auth (mission: %d)...", mission_class);
 
             // 미션 전송 (라즈베리파이 → 앱에서 표시)
             char mission_msg[32];
             snprintf(mission_msg, sizeof(mission_msg), "MISSION:%d", mission_class);
             auth_send_result(mission_msg);
             // Target 먼저 알려주고 3초 대기 후 캡처
-            PR_INFO("Target: class %d", mission_class);
-            MXC_Delay(MXC_DELAY_SEC(3));
+            MXC_Delay(MXC_DELAY_SEC(5));
             // 카메라 해상도 64x64로 변경
             camera_setup(64, 64, PIXFORMAT_RGB565, FIFO_FOUR_BYTE, USE_DMA, dma_channel);
             // 최대 5회 재시도
@@ -172,7 +274,7 @@ int main(void)
                     break;
                 }
                 PR_INFO("Gesture retry %d/5", retry + 1);
-                MXC_Delay(MXC_DELAY_SEC(3));
+                MXC_Delay(MXC_DELAY_SEC(5));
             }
             // 원래 해상도로 복구
             camera_setup(IMAGE_XRES, IMAGE_YRES, PIXFORMAT_RGB565,
@@ -195,11 +297,9 @@ int main(void)
 
         // 레벨 2: 화자 임베딩 추가 인증
         if (DEFAULT_AUTH_LEVEL >= 2) {
-            PR_INFO("Running speaker auth...");
             auth_send_result("SPEAKER_START");
             if (!speaker_auth()) {
                 fail_count++;
-                PR_INFO("Speaker FAIL (%d/3)", fail_count);
                 auth_send_result("AUTH_FAIL");
                 if (fail_count >= MAX_FAIL_COUNT) {
                     auth_lockout();

@@ -52,6 +52,15 @@ def on_uart_message(msg):
         auth_state['mission'] = GESTURE_CLASSES[mission_idx]
         auth_state['stage'] = 'gesture'
 
+    elif 'Face detected' in msg:
+        auth_state['stage'] = 'face'
+        auth_state['status'] = 'face_detected'
+    elif 'FaceID max_emb' in msg:
+        # 얼굴 인식 진행 중
+        auth_state['stage'] = 'faceid'
+    elif 'Running gesture' in msg or 'Target: class' in msg:
+        auth_state['stage'] = 'gesture'
+    
     elif msg == 'SPEAKER_START':
         auth_state['stage'] = 'speaker'
 
