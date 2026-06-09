@@ -33,6 +33,7 @@
 // 랜덤 미션 클래스 (0~4)
 // 실제 구현 시 라즈베리파이에서 UART로 수신
 static int mission_class = 0;
+static int current_auth_level = 2;  // 기본 level 2, START:N으로 동적 변경
 
 extern void SD_Init(void);
 extern volatile uint8_t face_detected;
@@ -169,6 +170,11 @@ int main(void)
         if (auth_uart_read_line(cmd, sizeof(cmd)) > 0) {
             if (strncmp(cmd, "START", 5) == 0) {
                 current_mode = MODE_AUTH;
+                // "START:N" 형식이면 N을 파싱해서 level 설정
+                if (cmd[5] == ':') {
+                    int lvl = cmd[6] - '0';
+                    if (lvl >= 1 && lvl <= 2) current_auth_level = lvl;
+                }
             } else if (strncmp(cmd, "CAPTURE", 7) == 0) {
                 current_mode = MODE_ENROLL;
             }
@@ -256,7 +262,7 @@ int main(void)
         face_detected = 0;
 
         // 레벨 1 이상: 제스처 인증
-        if (DEFAULT_AUTH_LEVEL >= 1) {
+        if (current_auth_level >= 1) {
 
             // 미션 전송 (라즈베리파이 → 앱에서 표시)
             char mission_msg[32];
@@ -296,7 +302,7 @@ int main(void)
         }
 
         // 레벨 2: 화자는 라즈베리파이가 보드B로 처리. 신호만 송신.
-        if (DEFAULT_AUTH_LEVEL >= 2) {
+        if (current_auth_level >= 2) {
             auth_send_result("SPEAKER_START");
             fail_count = 0;
             LED_Off(1);
