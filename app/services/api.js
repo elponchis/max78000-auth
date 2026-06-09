@@ -38,3 +38,16 @@ export const enrollSave = (rawPath, userName, index) =>
   api.post('/enroll/save', { raw_path: rawPath, user_name: userName, index });
 export const enrollFinalize = (userName) =>
   api.post('/enroll/finalize', { user_name: userName });
+
+// 화자 등록 (보드 B)
+export const enrollSpeakerCapture = () =>
+  api.post('/enroll/speaker_capture');
+
+// speaker_save는 보드B에서 EMBED 받을 때까지 동기 블록 (~최대 30초)
+export const enrollSpeakerSave = (userName, index) =>
+  api.post('/enroll/speaker_save',
+    { user_name: userName, index },
+    { timeout: 35000 });
+
+export const enrollSpeakerFinalize = (userName) =>
+  api.post('/enroll/speaker_finalize', { user_name: userName });
