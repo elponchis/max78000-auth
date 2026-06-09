@@ -298,6 +298,9 @@ int main(void)
         // 레벨 2: 화자는 라즈베리파이가 보드B로 처리. 신호만 송신.
         if (DEFAULT_AUTH_LEVEL >= 2) {
             auth_send_result("SPEAKER_START");
+            fail_count = 0;
+            LED_Off(1);
+            continue;
             // 라즈베리파이가 보드B에 'G' 보내고 결과 비교 후 SUCCESS/FAIL 결정
             // 보드A는 여기서 다음 미션으로 넘어가지 않고 마침
         }
