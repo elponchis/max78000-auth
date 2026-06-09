@@ -295,18 +295,11 @@ int main(void)
                          FIFO_FOUR_BYTE, USE_DMA, dma_channel);
         }
 
-        // 레벨 2: 화자 임베딩 추가 인증
+        // 레벨 2: 화자는 라즈베리파이가 보드B로 처리. 신호만 송신.
         if (DEFAULT_AUTH_LEVEL >= 2) {
             auth_send_result("SPEAKER_START");
-            if (!speaker_auth()) {
-                fail_count++;
-                auth_send_result("AUTH_FAIL");
-                if (fail_count >= MAX_FAIL_COUNT) {
-                    auth_lockout();
-                    fail_count = 0;
-                }
-                continue;
-            }
+            // 라즈베리파이가 보드B에 'G' 보내고 결과 비교 후 SUCCESS/FAIL 결정
+            // 보드A는 여기서 다음 미션으로 넘어가지 않고 마침
         }
 
         // 인증 성공
