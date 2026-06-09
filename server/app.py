@@ -16,6 +16,59 @@ from manage_db import (recv_one, average_embeddings, write_header,
 # 화자 등록 임시 저장소: {user_name: [emb_array, ...]}
 _speaker_pending = {}
 
+import threading as _threading
+import numpy as _np
+
+_SPEAKER_THRESHOLD = 0.65  # cosine similarity 임계값 (q7 정규화 임베딩)
+
+def _board_b_authenticate_async():
+    """보드B에 'G' 보내고 EMBED 받아서 speaker_db의 Jisoo와 비교, AUTH 결과 송신"""
+    try:
+        from manage_db import recv_one, open_serial, load_header
+        ser = open_serial(_BOARD_B_PORT, 115200)
+        if ser is None:
+            print('[SPK_AUTH] board B open failed')
+            uart_a.send('AUTH_FAIL')
+            auth_state['status'] = 'fail'
+            return
+        try:
+            emb, peak, rms = recv_one(ser, timeout=30)
+        finally:
+            ser.close()
+        if emb is None:
+            print(f'[SPK_AUTH] timeout (peak={peak}, rms={rms})')
+            uart_a.send('AUTH_FAIL')
+            auth_state['status'] = 'fail'
+            return
+        # speaker_db 로드 후 Jisoo 비교
+        entries = load_header(_SPEAKER_DB_H)
+        target = None
+        for n, e in entries:
+            if n == 'Jisoo':
+                target = e
+                break
+        if target is None:
+            print('[SPK_AUTH] Jisoo not in DB')
+            uart_a.send('AUTH_FAIL')
+            auth_state['status'] = 'fail'
+            return
+        # cosine similarity (q7 INT8)
+        a = emb.astype(_np.float32)
+        b = target.astype(_np.float32)
+        sim = float(_np.dot(a, b) / (_np.linalg.norm(a) * _np.linalg.norm(b) + 1e-9))
+        print(f'[SPK_AUTH] sim={sim:.3f} peak={peak} threshold={_SPEAKER_THRESHOLD}')
+        if sim >= _SPEAKER_THRESHOLD:
+            uart_a.send('AUTH_SUCCESS')
+            auth_state['status'] = 'success'
+        else:
+            uart_a.send('AUTH_FAIL')
+            auth_state['status'] = 'fail'
+    except Exception as e:
+        print(f'[SPK_AUTH] error: {e}')
+        uart_a.send('AUTH_FAIL')
+        auth_state['status'] = 'fail'
+
+
 import random
 import threading
 import time
@@ -76,6 +129,8 @@ def on_uart_message(msg):
 
     elif 'SPEAKER_START' in msg:
         auth_state['stage'] = 'speaker'
+        # 보드B에서 임베딩 받아서 cosine 비교 → AUTH_SUCCESS/FAIL
+        _threading.Thread(target=_board_b_authenticate_async, daemon=True).start()
 
 # ── API 엔드포인트 ────────────────────────────────────────────────────────────
 
